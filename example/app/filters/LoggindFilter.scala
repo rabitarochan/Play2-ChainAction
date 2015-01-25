@@ -1,19 +1,21 @@
 package filters
 
-import com.github.rabitarochan.play2.chainaction.{RequestWithAttributes, ChainFilter}
+import com.github.rabitarochan.play2.stackableaction._
 import play.api.Logger
 import play.api.mvc.Result
 
 import scala.concurrent.Future
 
 
-trait LoggindFilter {
+trait LoggindFilter extends StackableFilter {
 
-  val loggingFilter = new ChainFilter {
-    override def apply[A](next: (RequestWithAttributes[A]) => Future[Result])(request: RequestWithAttributes[A]): Future[Result] = {
-      Logger.debug("Start Filter")
-      next(request)
-    }
+  abstract override def filter[A](request: RequestWithAttributes[A])(f: RequestWithAttributes[A] => Future[Result]): Future[Result] = {
+    Logger.debug("LoggingFilter")
+    super.filter(request.set(LoggingKey, "LoggingValue"))(f)
   }
+
+  case object LoggingKey extends AttributeKey[String]
+
+  def loggingKey(implicit request: RequestWithAttributes[_]): String = request.get(LoggingKey).get
 
 }

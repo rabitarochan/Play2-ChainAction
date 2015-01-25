@@ -1,22 +1,20 @@
 package filters
 
-import com.github.rabitarochan.play2.chainaction.{RequestWithAttributes, ChainFilter}
+import com.github.rabitarochan.play2.stackableaction._
 import play.api.Logger
 import play.api.mvc.Result
 import scala.concurrent.ExecutionContext.Implicits.global
 
 import scala.concurrent.Future
 
-trait StopwatchFilter {
+trait StopwatchFilter extends StackableFilter {
 
-  val stopwatchFilter = new ChainFilter {
-    override def apply[A](next: (RequestWithAttributes[A]) => Future[Result])(request: RequestWithAttributes[A]): Future[Result] = {
-      val start = System.currentTimeMillis
-      next(request) map { res =>
-        val span = System.currentTimeMillis - start
-        Logger.debug(s"Stopwatch: ${span}ms")
-        res
-      }
+  abstract override def filter[A](req: RequestWithAttributes[A])(f: RequestWithAttributes[A] => Future[Result]): Future[Result] = {
+    val start = System.currentTimeMillis()
+    super.filter(req)(f) map { res =>
+      val span = System.currentTimeMillis() - start
+      Logger.debug(s"Stopwatch: ${span}ms")
+      res
     }
   }
 
